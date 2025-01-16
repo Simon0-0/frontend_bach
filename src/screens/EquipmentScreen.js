@@ -21,6 +21,7 @@ const EquipmentScreen = ({ navigation }) => {
   };
 
   // Refresh the equipment list when the screen is focused
+  
   useFocusEffect(
     React.useCallback(() => {
       loadEquipment();

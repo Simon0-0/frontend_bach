@@ -8,16 +8,17 @@ const CreateEquipmentScreen = ({ navigation }) => {
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('Available');
   const [location, setLocation] = useState('');
-  const [assignedTo, setAssignedTo] = useState(null); // Store selected employee ID
-  const [employees, setEmployees] = useState([]); // Store list of employees
+  const [assignedTo, setAssignedTo] = useState(null); 
+  const [employees, setEmployees] = useState([]); 
   const [supplierId, setSupplierId] = useState('');
 
-  // Fetch employees when the component mounts
+
   useEffect(() => {
     const loadEmployees = async () => {
       try {
-        const data = await fetchEmployees(); // Fetch employees from backend
-        setEmployees(data); // Assume data is an array of employee objects
+        const data = await fetchEmployees();
+        setEmployees(data);
+        console.log(data);
       } catch (err) {
         alert('Failed to load employees.');
       }
@@ -59,7 +60,7 @@ const CreateEquipmentScreen = ({ navigation }) => {
         onChangeText={setDescription}
         placeholder="Description"
       />
-      
+
       <Text style={styles.label}>Status</Text>
       <Picker
         selectedValue={status}
@@ -89,6 +90,7 @@ const CreateEquipmentScreen = ({ navigation }) => {
           <Picker.Item key={employee.id} label={employee.name} value={employee.id} />
         ))}
       </Picker>
+
 
       <TextInput
         style={styles.input}

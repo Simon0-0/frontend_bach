@@ -3,7 +3,7 @@ import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { updateEquipment } from '../api/api'; // Import the API function
 
 const UpdateEquipmentScreen = ({ route, navigation }) => {
-  const { equipment } = route.params; // Extract equipment details from route parameters
+  const { equipment } = route.params; 
 
   // States for equipment fields
   const [name, setName] = useState(equipment.name);

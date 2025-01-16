@@ -3,10 +3,10 @@ import { View, Text, Button, StyleSheet, Alert } from 'react-native';
 import { archiveEquipment } from '../api/api'; // Import the archive API function
 
 const EquipmentDetailsScreen = ({ route, navigation }) => {
-  const { equipment } = route.params; // Extract equipment details from route parameters
+  const { equipment } = route.params;
 
   const navigateToUpdate = () => {
-    navigation.navigate('UpdateEquipment', { equipment }); // Pass equipment details to the update screen
+    navigation.navigate('UpdateEquipment', { equipment }); 
   };
 
   const handleArchive = async () => {
