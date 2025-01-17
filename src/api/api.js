@@ -92,20 +92,23 @@ export const createEquipment = async (data) => {
   return await api.post('/equipment/create.php', data);
 };
 
-// Update Equipment
-export const updateEquipment = async (id, data) => {
-  return await api.put(`/equipment/update.php?id=${id}`, data);
-};
-
-export const archiveEquipment = async (id) => {
+export const updateEquipment = async (id, updatedData) => {
   try {
-    const response = await api.put(`/equipment/archive.php`, { equipment_id: id });
+    console.log("📡 Sending API request with data:", JSON.stringify(updatedData, null, 2));
+
+    const response = await api.put(`/equipment/update.php`, { ...updatedData, equipment_id: id }, {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    console.log(" API Response:", response.data);
     return response.data;
   } catch (error) {
-    console.error('Failed to archive equipment:', error.response?.data || error.message);
+    console.error(" API Error:", error.response?.data || error.message);
     throw error;
   }
 };
+
+
 
 
 
@@ -119,10 +122,20 @@ export const updateSupplier = async (id, data) => {
   return await api.put(`/suppliers/update.php?id=${id}`, data);
 };
 
-// Archive Supplier
 export const archiveSupplier = async (id) => {
-  return await api.put(`/suppliers/archive.php?id=${id}`);
+  try {
+      const response = await axios.put(
+          `http://localhost/bch_final_project/api/suppliers/archive.php`,
+          { supplier_id: id },  // Ensure key matches PHP expectation
+          { headers: { "Content-Type": "application/json" } } // Ensure JSON format
+      );
+      return response.data;
+  } catch (error) {
+      console.error("Error archiving supplier:", error.response?.data || error.message);
+      throw error;
+  }
 };
+
 
 // Fetch Tasks
 export const fetchTasks = async () => {
@@ -188,6 +201,22 @@ export const updateDocument = async (data) => {
 export const archiveDocument = async (id) => {
   return await api.put(`/documents/archive.php?id=${id}`);
 };
+export const createDocument = async (data) => {
+  try {
+    console.log("📡 Sending API request:", JSON.stringify(data, null, 2));
+
+    const response = await api.post("/documents/create.php", data, {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    console.log(" API Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error(" API Error:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 
 
 export default api;

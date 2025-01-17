@@ -33,7 +33,7 @@ const TaskDetailsScreen = ({ route, navigation }) => {
 
       <View style={styles.buttonContainer}>
         <Button title="Edit Task" onPress={navigateToUpdate} />
-        <Button title="Archive Task" onPress={handleArchive} color="red" />
+        <Button title="Done Task" onPress={handleArchive} color="red" />
         <Button title="Go Back" onPress={() => navigation.goBack()} />
       </View>
     </View>
