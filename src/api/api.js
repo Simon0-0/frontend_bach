@@ -59,6 +59,100 @@ export const fetchEmployees = async () => {
   }
 };
 
+export const fetchEmployeeById = async (employeeId) => {
+  try {
+    console.log(`Fetching employee with ID: ${employeeId}`);
+
+    const response = await fetch(`http://localhost/bch_final_project/api/employees/getEmployeeById.php?employee_id=${employeeId}`);
+    const data = await response.json();
+
+    console.log("API Response:", data);  // Log the response to verify the structure
+
+    // Check if the response has an 'employee' property
+    if (data && data.employee) {
+      return data.employee;  // Return the employee data
+    } else {
+      // If no employee data is found, log the message
+      console.error("Employee not found in response:", data);
+      throw new Error("Employee not found");
+    }
+  } catch (error) {
+    console.error("Error fetching employee:", error);  // Log the error message
+    throw error;  // Rethrow the error
+  }
+};
+export const updateEmployee = async (employeeId, updatedData) => {
+  try {
+    const token = await AsyncStorage.getItem('authToken');
+    if (!token) throw new Error('No token found. Please log in.');
+
+    const response = await axios.put(
+      `${API_BASE_URL}/employees/update.php`,
+      { employee_id: employeeId, ...updatedData }, // Sending employee_id and updated data
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    console.log("Employee updated:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to update employee:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const createEmployee = async (employeeData) => {
+  try {
+    const token = await AsyncStorage.getItem('authToken');
+    if (!token) throw new Error('No token found. Please log in.');
+
+    console.log("📡 Sending API Request:", employeeData);
+
+    const response = await axios.post(
+      `${API_BASE_URL}/employees/create.php`,
+      employeeData, 
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    console.log("✅ Employee Created Successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Failed to create employee:", error.response?.data || error.message);
+    throw error;
+  }
+};
+export const updatePassword = async ({ currentPassword, newPassword, token }) => {
+  try {
+    const response = await axios.put(
+      `${API_BASE_URL}/employees/change_password.php`,
+      { currentPassword, newPassword },
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    console.log("✅ Password updated:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Failed to update password:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+
+
 // Fetch Equipment Data
 export const fetchEquipment = async () => {
   try {
@@ -92,12 +186,92 @@ export const createEquipment = async (data) => {
   return await api.post('/equipment/create.php', data);
 };
 
-export const updateEquipment = async (id, updatedData) => {
+export const updateEquipment = async (data) => {
   try {
-    console.log("📡 Sending API request with data:", JSON.stringify(updatedData, null, 2));
+    const token = await AsyncStorage.getItem('authToken'); // Get stored token
+    if (!token) throw new Error("Auth token is missing. Please log in again.");
 
-    const response = await api.put(`/equipment/update.php`, { ...updatedData, equipment_id: id }, {
-      headers: { "Content-Type": "application/json" },
+    console.log("📡 Sending API request with data:", JSON.stringify(data, null, 2));
+
+    const response = await axios.put(`${API_BASE_URL}/equipment/update.php`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`, // Add Authorization token
+      },
+    });
+
+    console.log("✅ API Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ API Error:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+
+export const createSupplier = async (data, image) => {
+  try {
+    const formData = new FormData();
+    formData.append("name", data.name);
+    formData.append("contact_name", data.contact_name);
+    formData.append("email", data.email);
+    formData.append("phone_number", data.phone_number);
+    formData.append("address", data.address);
+    formData.append("city", data.city);
+    formData.append("country", data.country);
+
+    if (image) {
+      formData.append("image", {
+        uri: image.uri,
+        type: "image/jpeg", // Ensure correct format
+        name: "supplier_image.jpg",
+      });
+    }
+
+    const response = await axios.post(`${API_BASE_URL}/suppliers/create.php`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Failed to create supplier:", error.response?.data || error.message);
+    throw error;
+  }
+};
+export const updateSupplier = async (id, data, image) => {
+  try {
+    const formData = new FormData();
+    formData.append("supplier_id", id);
+    formData.append("name", data.name);
+    formData.append("contact_name", data.contact_name);
+    formData.append("email", data.email);
+    formData.append("phone_number", data.phone_number);
+    formData.append("address", data.address);
+    formData.append("city", data.city);
+    formData.append("country", data.country);
+
+    // If an image URL is provided, add it to formData
+    if (data.image_url) {
+      formData.append("image_url", data.image_url);
+    }
+
+    // If an image file is selected, append it to formData
+    if (image) {
+      formData.append("image", {
+        uri: image.uri,
+        type: "image/jpeg", // Adjust based on file type
+        name: "supplier_image.jpg",
+      });
+    }
+
+    console.log("📡 Sending update request:", formData);
+
+    const response = await axios.post(`${API_BASE_URL}/suppliers/update.php`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
     });
 
     console.log(" API Response:", response.data);
@@ -108,19 +282,6 @@ export const updateEquipment = async (id, updatedData) => {
   }
 };
 
-
-
-
-
-// Create Supplier
-export const createSupplier = async (data) => {
-  return await api.post('/suppliers/create.php', data);
-};
-
-// Update Supplier
-export const updateSupplier = async (id, data) => {
-  return await api.put(`/suppliers/update.php?id=${id}`, data);
-};
 
 export const archiveSupplier = async (id) => {
   try {

@@ -10393,6 +10393,11 @@ react-native-gesture-handler@^2.22.0, "react-native-gesture-handler@>= 2.0.0":
     hoist-non-react-statics "^3.3.0"
     invariant "^2.2.4"
 
+react-native-image-picker@^7.2.3:
+  version "7.2.3"
+  resolved "https://registry.npmjs.org/react-native-image-picker/-/react-native-image-picker-7.2.3.tgz"
+  integrity sha512-zKIZUlQNU3EtqizsXSH92zPeve4vpUrsqHu2kkpCxWE9TZhJFZBb+irDsBOY8J21k0+Edgt06TMQGJ+iPUIXyA==
+
 react-native-reanimated@^3.16.6, "react-native-reanimated@>= 2.0.0":
   version "3.16.6"
   resolved "https://registry.npmjs.org/react-native-reanimated/-/react-native-reanimated-3.16.6.tgz"

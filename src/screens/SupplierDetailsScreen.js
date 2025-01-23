@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, Button, StyleSheet, Alert, Image } from 'react-native';
 import { archiveSupplier } from '../api/api'; // Import the archive API function
 
 const SupplierDetailsScreen = ({ route, navigation }) => {
@@ -22,6 +22,13 @@ const SupplierDetailsScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
+      {/* Display image from URL if available */}
+      {supplier.image_url ? (
+        <Image source={{ uri: supplier.image_url }} style={styles.image} />
+      ) : (
+        <Text style={styles.noImage}>No Image Available</Text>
+      )}
+
       <Text style={styles.title}>{supplier.name}</Text>
       <Text style={styles.detail}>Contact Name: {supplier.contact_name}</Text>
       <Text style={styles.detail}>Email: {supplier.email}</Text>
@@ -43,6 +50,8 @@ const SupplierDetailsScreen = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
+  image: { width: 200, height: 200, marginBottom: 20, alignSelf: 'center', resizeMode: 'cover' },
+  noImage: { fontSize: 16, color: "gray", textAlign: 'center', marginBottom: 20 },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
   detail: { fontSize: 16, marginBottom: 10 },
   buttonContainer: { marginTop: 20, justifyContent: 'space-between', height: 120 },

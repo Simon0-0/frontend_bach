@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
+  Image
 } from 'react-native';
 import { fetchSuppliers } from '../api/api'; // API function to fetch suppliers
 
@@ -65,10 +66,13 @@ const SuppliersScreen = ({ navigation }) => {
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => navigateToDetails(item)}>
             <View style={styles.item}>
-              <Text style={styles.itemTitle}>{item.name}</Text>
-              <Text>Contact: {item.contact_name}</Text>
-              <Text>Email: {item.email}</Text>
-              <Text>Phone: {item.phone_number}</Text>
+              {item.image && <Image source={{ uri: item.image }} style={styles.thumbnail} />}
+              <View style={styles.textContainer}>
+                <Text style={styles.itemTitle}>{item.name}</Text>
+                <Text>Contact: {item.contact_name}</Text>
+                <Text>Email: {item.email}</Text>
+                <Text>Phone: {item.phone_number}</Text>
+              </View>
             </View>
           </TouchableOpacity>
         )}
@@ -83,8 +87,10 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
   error: { color: 'red', fontSize: 18, textAlign: 'center' },
-  item: { padding: 15, borderBottomWidth: 1, borderBottomColor: '#ccc' },
+  item: { flexDirection: 'row', padding: 15, borderBottomWidth: 1, borderBottomColor: '#ccc', alignItems: 'center' },
   itemTitle: { fontWeight: 'bold', fontSize: 18 },
+  thumbnail: { width: 50, height: 50, marginRight: 10, borderRadius: 5 },
+  textContainer: { flex: 1 },
 });
 
 export default SuppliersScreen;

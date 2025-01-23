@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Button } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setAuthToken } from '../api/api';
 
@@ -31,28 +31,26 @@ const DashboardScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.menu}>
-        <TouchableOpacity onPress={() => navigateTo('Equipment')} style={styles.menuItem}>
-          <Text style={styles.menuText}>Equipment</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigateTo('Suppliers')} style={styles.menuItem}>
-          <Text style={styles.menuText}>Suppliers</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigateTo('Tasks')} style={styles.menuItem}>
-          <Text style={styles.menuText}>Tasks</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigateTo('Documents')} style={styles.menuItem}>
-          <Text style={styles.menuText}>Documents</Text>
-        </TouchableOpacity>
-      </View>
+      {(userInfo && (userInfo.role_id === 1 || userInfo.role_id === 2)) && (
+        <View style={styles.menu}>
+          <TouchableOpacity onPress={() => navigateTo('Employees')} style={styles.menuItem}>
+            <Text style={styles.menuText}>Employees</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {userInfo && (
         <View style={styles.userInfo}>
           <Text style={styles.title}>Welcome, {userInfo.name}</Text>
-          <Text style={styles.subtext}>Role: {userInfo.role_id === 1 ? 'Admin' : userInfo.role_id === 2 ? 'Manager' : 'Employee'}</Text>
+          <Text style={styles.subtext}>
+            Role: {userInfo.role_id === 1 ? 'Admin' : userInfo.role_id === 2 ? 'Manager' : 'Employee'}
+          </Text>
           <Text style={styles.subtext}>Email: {userInfo.email}</Text>
           <Text style={styles.subtext}>Phone: {userInfo.phone}</Text>
           <Text style={styles.subtext}>Position: {userInfo.position}</Text>
+
+          {/* ✅ Change Password Button */}
+          <Button title="Change Password" onPress={() => navigation.navigate('ChangePassword')} color="blue" />
         </View>
       )}
     </View>
@@ -74,8 +72,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 20,
-    elevation: 5, // Shadow for Android
-    shadowColor: '#000', // Shadow for iOS
+    elevation: 5, 
+    shadowColor: '#000', 
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,

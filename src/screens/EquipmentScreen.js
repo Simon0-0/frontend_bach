@@ -65,6 +65,7 @@ const EquipmentScreen = ({ navigation }) => {
               <Text style={styles.itemTitle}>{item.name}</Text>
               <Text>{item.description}</Text>
               <Text>Status: {item.status}</Text>
+              <Text>Warranty Expiration: {item.warranty_expiration}</Text>
               <Text>Assigned To: {item.assigned_to || 'Unassigned'}</Text>
             </View>
           </TouchableOpacity>

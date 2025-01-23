@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  Alert,
+  Image
+} from 'react-native';
+import { launchImageLibrary } from 'react-native-image-picker';
 import { createSupplier } from '../api/api'; // API function to create a supplier
+import { ScrollView } from 'react-native-web';
 
 const CreateSupplierScreen = ({ navigation }) => {
   const [name, setName] = useState('');
@@ -10,6 +20,20 @@ const CreateSupplierScreen = ({ navigation }) => {
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [country, setCountry] = useState('');
+  const [image, setImage] = useState(null);
+
+  const selectImage = () => {
+    launchImageLibrary({ mediaType: 'photo', quality: 1 }, (response) => {
+      if (response.didCancel) {
+        console.log('User cancelled image picker');
+      } else if (response.errorMessage) {
+        console.error('ImagePicker Error:', response.errorMessage);
+      } else {
+        const source = { uri: response.assets[0].uri };
+        setImage(source);
+      }
+    });
+  };
 
   const handleCreate = async () => {
     if (!name || !contactName || !email || !phoneNumber) {
@@ -26,6 +50,7 @@ const CreateSupplierScreen = ({ navigation }) => {
         address,
         city,
         country,
+        image: image ? image.uri : null,
       };
 
       await createSupplier(payload); // Call the API function
@@ -38,7 +63,9 @@ const CreateSupplierScreen = ({ navigation }) => {
   };
 
   return (
+    
     <View style={styles.container}>
+      <ScrollView>
       <Text style={styles.title}>Create New Supplier</Text>
       <TextInput
         style={styles.input}
@@ -84,13 +111,16 @@ const CreateSupplierScreen = ({ navigation }) => {
         value={country}
         onChangeText={setCountry}
       />
+      <Button title="Select Image" onPress={selectImage} />
+      {image && <Image source={image} style={styles.image} />}
       <Button title="Create Supplier" onPress={handleCreate} />
+      </ScrollView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
+  container: { height: 600, padding: 20 },
   title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
   input: {
     borderWidth: 1,
@@ -98,6 +128,12 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     borderColor: '#ccc',
+  },
+  image: {
+    width: 200,
+    height: 200,
+    marginTop: 20,
+    alignSelf: 'center',
   },
 });
 

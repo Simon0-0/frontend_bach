@@ -28,12 +28,14 @@ const UpdateDocumentScreen = ({ route, navigation }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Update Document</Text>
+      <Text style={styles.text}>Title</Text>
       <TextInput
         style={styles.input}
         value={title}
         onChangeText={setTitle}
         placeholder="Title"
       />
+      <Text style={styles.text}>Content / Link</Text>
       <TextInput
         style={styles.input}
         value={content}
@@ -49,6 +51,7 @@ const UpdateDocumentScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
   title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
+  text: { fontSize: 18, marginBottom: 10 },
   input: { borderWidth: 1, marginBottom: 15, padding: 10, borderRadius: 5 },
 });
 

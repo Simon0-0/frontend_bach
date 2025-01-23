@@ -1,104 +1,161 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
-import { Picker } from '@react-native-picker/picker'; // Import Picker
-import { createEquipment, fetchEmployees } from '../api/api'; // API functions
+import { Platform, View, Text, TextInput, Button, StyleSheet, TouchableOpacity } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker'; // Mobile only
+import DatePicker from 'react-datepicker'; // Web only
+import 'react-datepicker/dist/react-datepicker.css'; // Web only
+import { createEquipment, fetchEmployees } from '../api/api';
 
 const CreateEquipmentScreen = ({ navigation }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('Available');
   const [location, setLocation] = useState('');
-  const [assignedTo, setAssignedTo] = useState(null); 
-  const [employees, setEmployees] = useState([]); 
+  const [assignedTo, setAssignedTo] = useState('');
   const [supplierId, setSupplierId] = useState('');
-
+  const [warrantyExpiration, setWarrantyExpiration] = useState('');
+  const [purchaseDate, setPurchaseDate] = useState(new Date());
+  const [employees, setEmployees] = useState([]);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
     const loadEmployees = async () => {
       try {
         const data = await fetchEmployees();
         setEmployees(data);
-        console.log(data);
       } catch (err) {
-        alert('Failed to load employees.');
+        console.error("Failed to load employees:", err);
       }
     };
-
     loadEmployees();
   }, []);
 
   const handleCreate = async () => {
+    const payload = {
+      name,
+      description,
+      status,
+      location,
+      assigned_to: assignedTo || null,
+      supplier_id: supplierId || null,
+      warranty_expiration: warrantyExpiration,
+      purchase_date: purchaseDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+    };
+
+    console.log("🚀 Creating equipment with payload:", payload);
+
     try {
-      const payload = {
-        name,
-        description,
-        status,
-        location,
-        assigned_to: assignedTo, // Send the selected employee ID
-        supplier_id: supplierId ? parseInt(supplierId, 10) : null,
-      };
       await createEquipment(payload);
       alert('Equipment created successfully.');
       navigation.goBack();
     } catch (err) {
-      alert('Failed to create equipment. Please try again.');
+      console.error("Error creating equipment:", err);
+      alert('Failed to create equipment.');
     }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Create New Equipment</Text>
+
       <TextInput
         style={styles.input}
+        placeholder="Equipment Name"
         value={name}
         onChangeText={setName}
-        placeholder="Equipment Name"
       />
       <TextInput
         style={styles.input}
+        placeholder="Description"
         value={description}
         onChangeText={setDescription}
-        placeholder="Description"
       />
-
-      <Text style={styles.label}>Status</Text>
-      <Picker
-        selectedValue={status}
-        onValueChange={(itemValue) => setStatus(itemValue)}
-        style={styles.picker}
-      >
-        <Picker.Item label="Available" value="Available" />
-        <Picker.Item label="In Use" value="In Use" />
-        <Picker.Item label="In Repair" value="In Repair" />
-      </Picker>
-
       <TextInput
         style={styles.input}
+        placeholder="Status (e.g., Available)"
+        value={status}
+        onChangeText={setStatus}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Location"
         value={location}
         onChangeText={setLocation}
-        placeholder="Location"
       />
 
-      <Text style={styles.label}>Assigned To</Text>
-      <Picker
-        selectedValue={assignedTo}
-        onValueChange={(itemValue) => setAssignedTo(itemValue)}
-        style={styles.picker}
-      >
-        <Picker.Item label="Select Employee" value={null} />
-        {employees.map((employee) => (
-          <Picker.Item key={employee.id} label={employee.name} value={employee.id} />
-        ))}
-      </Picker>
+      {/* Date Picker for Purchase Date */}
+      {Platform.OS === 'web' ? (
+        <DatePicker
+          selected={purchaseDate}
+          onChange={(date) => setPurchaseDate(date)}
+          dateFormat="yyyy-MM-dd"
+          className="web-datepicker"
+        />
+      ) : (
+        <>
+          <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePicker}>
+            <Text style={styles.dateText}>{purchaseDate.toISOString().split('T')[0]}</Text>
+          </TouchableOpacity>
 
+          {showDatePicker && (
+            <DateTimePicker
+              value={purchaseDate}
+              mode="date"
+              display="default"
+              onChange={(event, selectedDate) => {
+                setShowDatePicker(false);
+                if (selectedDate) setPurchaseDate(selectedDate);
+              }}
+            />
+          )}
+        </>
+      )}
 
+      {/* Date Picker for Warranty Expiration */}
+      {Platform.OS === 'web' ? (
+        <DatePicker
+          selected={warrantyExpiration}
+          onChange={(date) => setWarrantyExpiration(date)}
+          dateFormat="yyyy-MM-dd"
+          className="web-datepicker"
+        />
+      ) : (
+        <>
+          <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePicker}>
+            <Text style={styles.dateText}>{warrantyExpiration ? warrantyExpiration.toISOString().split('T')[0] : 'Select Warranty Expiration'}</Text>
+          </TouchableOpacity>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={warrantyExpiration || new Date()}
+              mode="date"
+              display="default"
+              onChange={(event, selectedDate) => {
+                setShowDatePicker(false);
+                if (selectedDate) setWarrantyExpiration(selectedDate);
+              }}
+            />
+          )}
+        </>
+      )}
+
+      {/* Assigned To Picker */}
       <TextInput
         style={styles.input}
-        value={supplierId}
-        onChangeText={setSupplierId}
-        placeholder="Supplier ID"
+        placeholder="Assigned To (Employee ID)"
+        value={assignedTo}
+        onChangeText={setAssignedTo}
         keyboardType="numeric"
       />
+
+      {/* Supplier ID Input */}
+      <TextInput
+        style={styles.input}
+        placeholder="Supplier ID"
+        value={supplierId}
+        onChangeText={setSupplierId}
+        keyboardType="numeric"
+      />
+
       <Button title="Create Equipment" onPress={handleCreate} />
     </View>
   );
@@ -107,9 +164,25 @@ const CreateEquipmentScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
   title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
-  input: { borderWidth: 1, marginBottom: 15, padding: 10, borderRadius: 5 },
-  picker: { borderWidth: 1, marginBottom: 15, padding: 10 },
-  label: { fontSize: 16, marginBottom: 5 },
+  input: {
+    borderWidth: 1,
+    marginBottom: 15,
+    padding: 10,
+    borderRadius: 5,
+    borderColor: '#ccc',
+  },
+  datePicker: {
+    borderWidth: 1,
+    padding: 10,
+    borderRadius: 5,
+    borderColor: '#ccc',
+    marginBottom: 15,
+    alignItems: 'center',
+  },
+  dateText: {
+    fontSize: 16,
+    color: '#333',
+  },
 });
 
 export default CreateEquipmentScreen;

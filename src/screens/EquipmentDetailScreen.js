@@ -1,39 +1,86 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Button, StyleSheet, Alert } from 'react-native';
-import { archiveEquipment } from '../api/api'; // Import the archive API function
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { archiveEquipment, fetchEmployeeById } from '../api/api';
 
 const EquipmentDetailsScreen = ({ route, navigation }) => {
   const { equipment } = route.params;
+  const [employeeName, setEmployeeName] = useState(null);
+  const [userInfo, setUserInfo] = useState(null);
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const token = await AsyncStorage.getItem('authToken');
+        if (!token) {
+          navigation.navigate('Login');
+          return;
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUserInfo(payload.data);
+      } catch (err) {
+        console.error("Error fetching user info:", err);
+      }
+    };
+
+    const fetchEmployee = async () => {
+      if (equipment.assigned_to) {
+        try {
+          const response = await fetchEmployeeById(equipment.assigned_to);
+          setEmployeeName(response.name);
+        } catch (err) {
+          console.error("Error fetching employee:", err);
+          setEmployeeName("Unassigned");
+        }
+      } else {
+        setEmployeeName("Unassigned");
+      }
+    };
+
+    fetchUserInfo();
+    fetchEmployee();
+  }, [equipment.assigned_to]);
 
   const navigateToUpdate = () => {
-    navigation.navigate('UpdateEquipment', { equipment }); 
+    navigation.navigate('UpdateEquipment', { equipment });
   };
 
   const handleArchive = async () => {
     try {
-      // Ensure the equipment_id is sent as an integer
       await archiveEquipment(equipment.equipment_id);
       Alert.alert('Success', 'Equipment archived successfully.');
-      navigation.goBack(); // Navigate back after archiving
+      navigation.goBack();
     } catch (error) {
       console.error('Archive Error:', error.response?.data || error.message);
       Alert.alert('Error', error.response?.data?.message || 'Failed to archive equipment.');
     }
   };
-  
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{equipment.name}</Text>
+
       <Text style={styles.detail}>Description: {equipment.description}</Text>
       <Text style={styles.detail}>Status: {equipment.status}</Text>
       <Text style={styles.detail}>Location: {equipment.location || 'N/A'}</Text>
-      <Text style={styles.detail}>Assigned To: {equipment.assigned_to || 'Unassigned'}</Text>
+
+      <Text style={styles.detail}>Assigned To: {employeeName}</Text>
+
       <Text style={styles.detail}>Created At: {equipment.created_at}</Text>
       <Text style={styles.detail}>Updated At: {equipment.updated_at}</Text>
 
+      <Text style={styles.detail}>Warranty Expiration: {equipment.warranty_expiration || 'N/A'}</Text>
+      <Text style={styles.detail}>Warranty Status: {equipment.warranty_status || 'N/A'}</Text>
+
+      <Text style={styles.detail}>Supplier ID: {equipment.supplier_id || 'N/A'}</Text>
+
       <View style={styles.buttonContainer}>
-        <Button title="Edit Equipment" onPress={navigateToUpdate} />
+        {/* ✅ Allow editing if user is Admin, Manager, or Assigned */}
+        {(userInfo && (userInfo.role_id === 1 || userInfo.role_id === 2 || userInfo.employee_id === equipment.assigned_to)) && (
+          <Button title="Edit Equipment" onPress={navigateToUpdate} />
+        )}
+
         <Button title="Archive Equipment" onPress={handleArchive} color="red" />
         <Button title="Go Back" onPress={() => navigation.goBack()} />
       </View>

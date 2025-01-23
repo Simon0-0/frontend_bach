@@ -42,30 +42,35 @@ const UpdateTaskScreen = ({ route, navigation }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Update Task</Text>
+      <Text style={styles.text}>Title</Text>
       <TextInput
         style={styles.input}
         placeholder="Title*"
         value={title}
         onChangeText={setTitle}
       />
+      <Text style={styles.text}>Description</Text>
       <TextInput
         style={styles.input}
         placeholder="Description*"
         value={description}
         onChangeText={setDescription}
       />
+      <Text style={styles.text}>Status</Text>
       <TextInput
         style={styles.input}
         placeholder="Status* (e.g., Pending, In Progress, Completed)"
         value={status}
         onChangeText={setStatus}
       />
+      <Text style={styles.text}>Priority</Text>
       <TextInput
         style={styles.input}
         placeholder="Priority (e.g., High, Medium, Low)"
         value={priority}
         onChangeText={setPriority}
       />
+      <Text style={styles.text}>Assigned To</Text>
       <TextInput
         style={styles.input}
         placeholder="Assigned To (Employee ID)"
@@ -73,6 +78,7 @@ const UpdateTaskScreen = ({ route, navigation }) => {
         onChangeText={setAssignedTo}
         keyboardType="numeric"
       />
+      <Text style={styles.text}>Due Date</Text>
 
       {/* Platform-Specific Date Picker */}
       {Platform.OS === 'web' ? (
@@ -110,6 +116,7 @@ const UpdateTaskScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
   title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
+  text: { fontSize: 18, marginBottom: 10 },
   input: {
     borderWidth: 1,
     marginBottom: 15,

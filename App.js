@@ -20,6 +20,11 @@ import TaskDetailsScreen from './src/screens/TaskDetailsScreen';
 import DocumentDetailScreen from './src/screens/DocumentDetailScreen';
 import UpdateDocumentScreen from './src/screens/UpdateDocumentScreen';
 import CreateDocumentScreen from './src/screens/CreateDocumentScreen';
+import CreateEmployeeScreen from './src/screens/CreateEmployeeScreen';
+import EmployeeDetailsScreen from './src/screens/EmployeeDetailsScreen';
+import UpdateEmployeeScreen from './src/screens/UpdateEmployeeScreen';
+import Employees from './src/screens/EmployeesScreen';
+import ChangePasswordScreen from './src/screens/ChangePasswordScreen';
 
 
 const Stack = createStackNavigator();
@@ -55,6 +60,11 @@ export default function App() {
         <Stack.Screen name="DocumentDetails" component={DocumentDetailScreen} />
         <Stack.Screen name="UpdateDocument" component={UpdateDocumentScreen} />
         <Stack.Screen name="CreateDocument" component={CreateDocumentScreen} />
+        <Stack.Screen name="CreateEmployee" component={CreateEmployeeScreen} />
+        <Stack.Screen name="EmployeeDetails" component={EmployeeDetailsScreen} />
+        <Stack.Screen name="UpdateEmployee" component={UpdateEmployeeScreen} />
+        <Stack.Screen name="Employees" component={Employees} />
+        <Stack.Screen name='ChangePassword' component={ChangePasswordScreen}/>
       </Stack.Navigator>
     </NavigationContainer>
   );
