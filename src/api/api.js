@@ -180,11 +180,22 @@ export const fetchSuppliers = async () => {
     throw error;
   }
 };
-
-// Create Equipment
 export const createEquipment = async (data) => {
-  return await api.post('/equipment/create.php', data);
+  try {
+    console.log("📡 Sending API request for equipment creation:", data);
+
+    const response = await api.post('/equipment/create.php', data, {
+      headers: { 'Content-Type': 'multipart/form-data' }, // Ensure correct format
+    });
+
+    console.log("✅ API Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ API Error:", error.response?.data || error.message);
+    throw error;
+  }
 };
+
 
 export const updateEquipment = async (data) => {
   try {

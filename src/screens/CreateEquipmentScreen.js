@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Platform, View, Text, TextInput, Button, StyleSheet, TouchableOpacity } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker'; // Mobile only
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  Image,
+  Alert,
+  ScrollView
+} from 'react-native';
 import DatePicker from 'react-datepicker'; // Web only
 import 'react-datepicker/dist/react-datepicker.css'; // Web only
 import { createEquipment, fetchEmployees } from '../api/api';
@@ -12,10 +20,11 @@ const CreateEquipmentScreen = ({ navigation }) => {
   const [location, setLocation] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
   const [supplierId, setSupplierId] = useState('');
-  const [warrantyExpiration, setWarrantyExpiration] = useState('');
+  const [warrantyExpiration, setWarrantyExpiration] = useState(null);
   const [purchaseDate, setPurchaseDate] = useState(new Date());
   const [employees, setEmployees] = useState([]);
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [image, setImage] = useState(null); // Image preview
+  const [imageFile, setImageFile] = useState(null); // Actual image file
 
   useEffect(() => {
     const loadEmployees = async () => {
@@ -29,140 +38,126 @@ const CreateEquipmentScreen = ({ navigation }) => {
     loadEmployees();
   }, []);
 
-  const handleCreate = async () => {
-    const payload = {
-      name,
-      description,
-      status,
-      location,
-      assigned_to: assignedTo || null,
-      supplier_id: supplierId || null,
-      warranty_expiration: warrantyExpiration,
-      purchase_date: purchaseDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
-    };
+  // ✅ Handle Image Selection for Web
+  const handleImageChange = (event) => {
+    const file = event.target.files[0]; // Get selected file
 
-    console.log("🚀 Creating equipment with payload:", payload);
+    if (file) {
+      const fileURL = URL.createObjectURL(file); // Create temporary URL for preview
+      setImage(fileURL);
+      setImageFile(file);
+      console.log("📸 Selected Image:", file);
+    }
+  };
+
+  // ✅ Function to Handle Equipment Creation
+  const handleCreate = async () => {
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("description", description);
+    formData.append("status", status);
+    formData.append("location", location);
+    formData.append("assigned_to", assignedTo || null);
+    formData.append("supplier_id", supplierId || null);
+
+    if (warrantyExpiration) {
+      formData.append("warranty_expiration", warrantyExpiration.toISOString().split("T")[0]);
+    }
+    if (purchaseDate) {
+      formData.append("purchase_date", purchaseDate.toISOString().split("T")[0]);
+    }
+
+    // ✅ Append the image only if selected
+    if (imageFile) {
+      formData.append("image", imageFile);
+    }
+
+    console.log("🚀 Creating equipment with payload:", formData);
 
     try {
-      await createEquipment(payload);
-      alert('Equipment created successfully.');
+      const response = await createEquipment(formData);
+      console.log("✅ API Response:", response.data);
+      Alert.alert("Success", "Equipment created successfully.");
       navigation.goBack();
     } catch (err) {
-      console.error("Error creating equipment:", err);
-      alert('Failed to create equipment.');
+      console.error("❌ Error creating equipment:", err.response?.data || err.message);
+      Alert.alert("Error", "Failed to create equipment.");
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Create New Equipment</Text>
+      <ScrollView>
+        <Text style={styles.title}>Create New Equipment</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Equipment Name"
-        value={name}
-        onChangeText={setName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Description"
-        value={description}
-        onChangeText={setDescription}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Status (e.g., Available)"
-        value={status}
-        onChangeText={setStatus}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Location"
-        value={location}
-        onChangeText={setLocation}
-      />
-
-      {/* Date Picker for Purchase Date */}
-      {Platform.OS === 'web' ? (
-        <DatePicker
-          selected={purchaseDate}
-          onChange={(date) => setPurchaseDate(date)}
-          dateFormat="yyyy-MM-dd"
-          className="web-datepicker"
+        <TextInput
+          style={styles.input}
+          placeholder="Equipment Name"
+          value={name}
+          onChangeText={setName}
         />
-      ) : (
-        <>
-          <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePicker}>
-            <Text style={styles.dateText}>{purchaseDate.toISOString().split('T')[0]}</Text>
-          </TouchableOpacity>
+        <TextInput
+          style={styles.input}
+          placeholder="Description"
+          value={description}
+          onChangeText={setDescription}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Status (e.g., Available)"
+          value={status}
+          onChangeText={setStatus}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Location"
+          value={location}
+          onChangeText={setLocation}
+        />
 
-          {showDatePicker && (
-            <DateTimePicker
-              value={purchaseDate}
-              mode="date"
-              display="default"
-              onChange={(event, selectedDate) => {
-                setShowDatePicker(false);
-                if (selectedDate) setPurchaseDate(selectedDate);
-              }}
-            />
-          )}
-        </>
-      )}
+        {/* ✅ Image Upload Input (For Web) */}
+        <View style={styles.imageUploadContainer}>
+          <input type="file" accept="image/*" onChange={handleImageChange} />
+        </View>
 
-      {/* Date Picker for Warranty Expiration */}
-      {Platform.OS === 'web' ? (
+        {/* ✅ Show Selected Image Preview */}
+        {image && <Image source={{ uri: image }} style={styles.image} />}
+
+        {/* ✅ Date Picker for Warranty Expiration */}
         <DatePicker
           selected={warrantyExpiration}
           onChange={(date) => setWarrantyExpiration(date)}
           dateFormat="yyyy-MM-dd"
           className="web-datepicker"
         />
-      ) : (
-        <>
-          <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePicker}>
-            <Text style={styles.dateText}>{warrantyExpiration ? warrantyExpiration.toISOString().split('T')[0] : 'Select Warranty Expiration'}</Text>
-          </TouchableOpacity>
 
-          {showDatePicker && (
-            <DateTimePicker
-              value={warrantyExpiration || new Date()}
-              mode="date"
-              display="default"
-              onChange={(event, selectedDate) => {
-                setShowDatePicker(false);
-                if (selectedDate) setWarrantyExpiration(selectedDate);
-              }}
-            />
-          )}
-        </>
-      )}
+        {/* ✅ Assigned To Input */}
+        <TextInput
+          style={styles.input}
+          placeholder="Assigned To (Employee ID)"
+          value={assignedTo}
+          onChangeText={setAssignedTo}
+          keyboardType="numeric"
+        />
 
-      {/* Assigned To Picker */}
-      <TextInput
-        style={styles.input}
-        placeholder="Assigned To (Employee ID)"
-        value={assignedTo}
-        onChangeText={setAssignedTo}
-        keyboardType="numeric"
-      />
+        {/* ✅ Supplier ID Input */}
+        <TextInput
+          style={styles.input}
+          placeholder="Supplier ID"
+          value={supplierId}
+          onChangeText={setSupplierId}
+          keyboardType="numeric"
+        />
 
-      {/* Supplier ID Input */}
-      <TextInput
-        style={styles.input}
-        placeholder="Supplier ID"
-        value={supplierId}
-        onChangeText={setSupplierId}
-        keyboardType="numeric"
-      />
-
-      <Button title="Create Equipment" onPress={handleCreate} />
+        <Button title="Create Equipment" onPress={handleCreate} />
+      </ScrollView>
     </View>
   );
 };
 
+// ✅ Styles
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
+  container: { height: 620, padding: 20 },
   title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
   input: {
     borderWidth: 1,
@@ -171,17 +166,14 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     borderColor: '#ccc',
   },
-  datePicker: {
-    borderWidth: 1,
-    padding: 10,
-    borderRadius: 5,
-    borderColor: '#ccc',
-    marginBottom: 15,
-    alignItems: 'center',
+  imageUploadContainer: {
+    marginVertical: 15,
   },
-  dateText: {
-    fontSize: 16,
-    color: '#333',
+  image: {
+    width: 200,
+    height: 200,
+    marginTop: 20,
+    alignSelf: 'center',
   },
 });
 

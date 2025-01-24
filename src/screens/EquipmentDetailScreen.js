@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, Button, StyleSheet, Image, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { archiveEquipment, fetchEmployeeById } from '../api/api';
 
@@ -61,22 +61,22 @@ const EquipmentDetailsScreen = ({ route, navigation }) => {
     <View style={styles.container}>
       <Text style={styles.title}>{equipment.name}</Text>
 
+      {/* ✅ Display Image from Base64 */}
+      {equipment.image_data && (
+        <Image
+          source={{ uri: `data:image/png;base64,${equipment.image_data}` }}
+          style={styles.image}
+        />
+      )}
+
       <Text style={styles.detail}>Description: {equipment.description}</Text>
       <Text style={styles.detail}>Status: {equipment.status}</Text>
       <Text style={styles.detail}>Location: {equipment.location || 'N/A'}</Text>
-
       <Text style={styles.detail}>Assigned To: {employeeName}</Text>
-
       <Text style={styles.detail}>Created At: {equipment.created_at}</Text>
       <Text style={styles.detail}>Updated At: {equipment.updated_at}</Text>
 
-      <Text style={styles.detail}>Warranty Expiration: {equipment.warranty_expiration || 'N/A'}</Text>
-      <Text style={styles.detail}>Warranty Status: {equipment.warranty_status || 'N/A'}</Text>
-
-      <Text style={styles.detail}>Supplier ID: {equipment.supplier_id || 'N/A'}</Text>
-
       <View style={styles.buttonContainer}>
-        {/* ✅ Allow editing if user is Admin, Manager, or Assigned */}
         {(userInfo && (userInfo.role_id === 1 || userInfo.role_id === 2 || userInfo.employee_id === equipment.assigned_to)) && (
           <Button title="Edit Equipment" onPress={navigateToUpdate} />
         )}
@@ -92,6 +92,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
   detail: { fontSize: 16, marginBottom: 10 },
+  image: {
+    width: 200,
+    height: 200,
+    marginTop: 20,
+    alignSelf: 'center',
+    borderRadius: 10,
+  },
   buttonContainer: { marginTop: 20, justifyContent: 'space-between', height: 120 },
 });
 

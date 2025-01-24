@@ -1,7 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Button, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { fetchEquipment } from '../api/api'; // Your API call for fetching equipment
-import { useFocusEffect } from '@react-navigation/native'; // To refresh the screen on focus
+import {
+  View,
+  Text,
+  FlatList,
+  Button,
+  StyleSheet,
+  ActivityIndicator,
+  TouchableOpacity,
+  Image,
+} from 'react-native';
+import { fetchEquipment } from '../api/api'; // API call for fetching equipment
+import { useFocusEffect } from '@react-navigation/native'; // Refresh on focus
+
+// ✅ Set Correct BASE_URL (Ensure it's accessible)
+const BASE_URL = "http://localhost/bch_final_project/";
 
 const EquipmentScreen = ({ navigation }) => {
   const [equipment, setEquipment] = useState([]);
@@ -11,17 +23,26 @@ const EquipmentScreen = ({ navigation }) => {
   const loadEquipment = async () => {
     setLoading(true);
     try {
-      const data = await fetchEquipment();
-      setEquipment(data.data); // Assuming the response contains `data`
+      const response = await fetchEquipment();
+      console.log("📡 Equipment API Response:", response);
+
+      if (response.data && Array.isArray(response.data)) {
+        setEquipment(response.data);
+      } else {
+        throw new Error("Invalid API response");
+      }
     } catch (err) {
+      console.error("❌ Failed to fetch equipment:", err);
       setError(err.response?.data?.message || 'Failed to fetch equipment.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Refresh the equipment list when the screen is focused
-  
+  useEffect(() => {
+    loadEquipment();
+  }, []);
+
   useFocusEffect(
     React.useCallback(() => {
       loadEquipment();
@@ -29,12 +50,14 @@ const EquipmentScreen = ({ navigation }) => {
   );
 
   const navigateToCreate = () => {
-    navigation.navigate('CreateEquipment'); // Navigate to create equipment screen
+    navigation.navigate('CreateEquipment');
   };
 
   const navigateToDetails = (item) => {
-    navigation.navigate('EquipmentDetails', { equipment: item }); // Navigate to equipment details
+    navigation.navigate('EquipmentDetails', { equipment: item });
   };
+
+  console.log("🎯 Equipment List:", equipment);
 
   if (loading) {
     return (
@@ -56,21 +79,39 @@ const EquipmentScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Equipment List</Text>
-      <FlatList
-        data={equipment}
-        keyExtractor={(item) => item.equipment_id.toString()}
-        renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => navigateToDetails(item)}>
-            <View style={styles.item}>
-              <Text style={styles.itemTitle}>{item.name}</Text>
-              <Text>{item.description}</Text>
-              <Text>Status: {item.status}</Text>
-              <Text>Warranty Expiration: {item.warranty_expiration}</Text>
-              <Text>Assigned To: {item.assigned_to || 'Unassigned'}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
+
+      {equipment.length === 0 ? (
+        <Text style={styles.emptyMessage}>No equipment available.</Text>
+      ) : (
+        <FlatList
+          data={equipment}
+          keyExtractor={(item) => item.equipment_id.toString()}
+          renderItem={({ item }) => (
+            <TouchableOpacity onPress={() => navigateToDetails(item)}>
+              <View style={styles.item}>
+                {/* ✅ Display Equipment Thumbnail with Fallback */}
+                <Image
+                  source={
+                    item.image_path
+                      ? { uri: new URL(item.image_path, BASE_URL).href }
+                      : require('../../assets/no-image.png')
+                  }
+                  style={styles.thumbnail}
+                />
+                <View style={styles.textContainer}>
+                  <Text style={styles.itemTitle}>{item.name}</Text>
+                  <Text>{item.description}</Text>
+                  <Text>Status: {item.status}</Text>
+                  <Text>Warranty Expiration: {item.warranty_expiration || 'N/A'}</Text>
+                  <Text>Assigned To: {item.assigned_to || 'Unassigned'}</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          )}
+          ListFooterComponent={<View style={{ height: 50 }} />}
+        />
+      )}
+
       <Button title="Add New Equipment" onPress={navigateToCreate} />
     </View>
   );
@@ -81,8 +122,11 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
   error: { color: 'red', fontSize: 18, textAlign: 'center' },
-  item: { padding: 15, borderBottomWidth: 1, borderBottomColor: '#ccc' },
+  item: { flexDirection: 'row', padding: 15, borderBottomWidth: 1, borderBottomColor: '#ccc', alignItems: 'center' },
   itemTitle: { fontWeight: 'bold', fontSize: 18 },
+  thumbnail: { width: 50, height: 50, marginRight: 10, borderRadius: 5 },
+  textContainer: { flex: 1 },
+  emptyMessage: { fontSize: 18, textAlign: 'center', marginTop: 20 },
 });
 
 export default EquipmentScreen;
