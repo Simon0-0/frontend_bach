@@ -219,6 +219,23 @@ export const updateEquipment = async (data) => {
   }
 };
 
+export const archiveEquipment = async (equipmentId) => {
+  try {
+    const response = await api.put('/equipment/archive.php', { equipment_id: equipmentId });
+
+    console.log("📡 API Response (Archive Equipment):", response.data);
+
+    if (response.data?.message) {
+      return response.data;
+    } else {
+      console.error("❌ Unexpected API response format:", response.data);
+      return { message: "Failed to archive equipment." };
+    }
+  } catch (error) {
+    console.error('Failed to archive equipment:', error.response?.data || error.message);
+    throw error;
+  }
+};
 
 export const createSupplier = async (data, image) => {
   try {
@@ -388,7 +405,120 @@ export const createDocument = async (data) => {
     throw error;
   }
 };
+export const fetchArchivedDocuments = async () => {
+  try {
+    const response = await api.get('/documents/read_archived.php');
+    console.log("📡 API Response (Documents):", response.data); // Debug response
 
+    // Ensure response is an array
+    if (Array.isArray(response.data)) {
+      return response.data; // ✅ Correctly return the array
+    } else if (response.data?.data && Array.isArray(response.data.data)) {
+      return response.data.data; // Handle wrapped responses
+    } else {
+      console.error("❌ Unexpected API response format:", response.data);
+      return []; // Prevent app crash
+    }
+  } catch (error) {
+    console.error('Failed to fetch archived documents:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+
+export const fetchArchivedEquipment = async () => {
+  try {
+    const response = await api.get('/equipment/read_archived.php');
+    console.log("📡 API Response (Equipment):", response.data);
+
+    // Ensure response is an array
+    if (Array.isArray(response.data)) {
+      return response.data; // ✅ Return the array directly
+    } else if (response.data?.data && Array.isArray(response.data.data)) {
+      return response.data.data; // Handle wrapped responses
+    } else {
+      console.error("❌ Unexpected API response format:", response.data);
+      return [];
+    }
+  } catch (error) {
+    console.error('Failed to fetch archived equipment:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const fetchArchivedTasks = async () => {
+  try {
+    const response = await api.get('/tasks/read_archived.php');
+    console.log("📡 API Response (Tasks):", response.data);
+
+    // Ensure response is an array
+    if (Array.isArray(response.data)) {
+      return response.data; // ✅ Correctly return the array
+    } else if (response.data?.data && Array.isArray(response.data.data)) {
+      return response.data.data; // Handle wrapped responses
+    } else {
+      console.error("❌ Unexpected API response format:", response.data);
+      return [];
+    }
+  } catch (error) {
+    console.error('Failed to fetch archived tasks:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const fetchArchivedSuppliers = async () => {
+  try {
+    const response = await api.get('/suppliers/read_archived.php');
+    console.log("📡 API Response (Suppliers):", response.data);
+
+    // Ensure response is an array
+    if (Array.isArray(response.data)) {
+      return response.data; // ✅ Return the array directly
+    } else if (response.data?.data && Array.isArray(response.data.data)) {
+      return response.data.data; // Handle wrapped responses
+    } else {
+      console.error("❌ Unexpected API response format:", response.data);
+      return [];
+    }
+  } catch (error) {
+    console.error('Failed to fetch archived suppliers:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+
+
+export const fetchArchivedEmployees = async () => {
+  try {
+    const token = await AsyncStorage.getItem('authToken'); // Retrieve token
+
+    console.log("🔑 Stored Token:", token); // Debugging to check if token exists
+
+    if (!token) {
+      console.error("❌ No token found. User must log in.");
+      return [];
+    }
+
+    const response = await api.get('/employees/read_archived.php', {
+      headers: { Authorization: `Bearer ${token}` }, // ✅ Ensure token is included
+    });
+
+    console.log("📡 API Response (Employees):", response.data);
+
+    if (Array.isArray(response.data)) {
+      return response.data;
+    } else if (response.data?.message) {
+      console.error("❌ API returned an error:", response.data.message);
+      return [];
+    } else {
+      console.error("❌ Unexpected API response format:", response.data);
+      return [];
+    }
+  } catch (error) {
+    console.error('Failed to fetch archived employees:', error.response?.data || error.message);
+    throw error;
+  }
+};
 
 
 export default api;

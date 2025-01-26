@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Platform, View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert 
+  Platform, View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert, Image, ScrollView
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker'; // Mobile only
 import DatePicker from 'react-datepicker'; // Web only
 import 'react-datepicker/dist/react-datepicker.css'; // Web only
 import { updateEquipment, fetchEmployees, fetchEmployeeById } from '../api/api';
+
+// ✅ Set Correct BASE_URL for Images
+const BASE_URL = "http://localhost/bch_final_project/";
 
 const UpdateEquipmentScreen = ({ route, navigation }) => {
   const { equipment } = route.params;
@@ -29,6 +32,13 @@ const UpdateEquipmentScreen = ({ route, navigation }) => {
   );
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [employees, setEmployees] = useState([]);
+
+  const [image, setImage] = useState(
+    equipment.image_path ? `${BASE_URL}${equipment.image_path}`
+    : equipment.image_data ? `data:image/png;base64,${equipment.image_data}`
+    : require('../../assets/no-image.png') // Fallback image
+  );
+  const [imageFile, setImageFile] = useState(null); // Stores new uploaded image
 
   useEffect(() => {
     const initialize = async () => {
@@ -66,139 +76,115 @@ const UpdateEquipmentScreen = ({ route, navigation }) => {
     initialize();
   }, [equipment.assigned_to, navigation]);
 
+  const handleImageChange = (event) => {
+    const file = event.target.files[0]; // Get selected file
+  
+    if (file) {
+      const fileURL = URL.createObjectURL(file); // Create temporary URL for preview
+      setImage(fileURL);
+      setImageFile(file);
+      console.log("📸 Selected Image:", file);
+    } else {
+      console.error("❌ No file selected.");
+    }
+  };
+  
   const handleUpdate = async () => {
     if (!authorized) {
       Alert.alert("Access Denied", "You do not have permission to update this equipment.");
       return;
     }
-
-    const payload = {
-      equipment_id: equipmentId,
-      name: equipmentName,
-      status: equipmentStatus,
-      description: equipmentDescription,
-      location: equipmentLocation,
-      assigned_to: assignedTo ? Number(assignedTo) : null,
-      warranty_expiration: warrantyExpiration.toISOString().split('T')[0],
-      purchase_date: purchaseDate.toISOString().split('T')[0],
-    };
-
-    console.log("🚀 Payload Sent to API:", JSON.stringify(payload, null, 2));
-
-
-    console.log("🚀 Updating equipment with payload:", payload);
-
-    try {
-      await updateEquipment(payload);
-      Alert.alert('Success', 'Equipment updated successfully.');
-      navigation.goBack();
-    } catch (err) {
-      console.error("❌ API Error:", err.response?.data || err.message);
-      Alert.alert('Error', err.response?.data?.message || 'Failed to update equipment.');
+  
+    const formData = new FormData();
+    formData.append("equipment_id", equipmentId);
+    formData.append("name", equipmentName);
+    formData.append("status", equipmentStatus);
+    formData.append("description", equipmentDescription);
+    formData.append("location", equipmentLocation);
+    formData.append("assigned_to", assignedTo ? Number(assignedTo) : null);
+    formData.append("warranty_expiration", warrantyExpiration.toISOString().split("T")[0]);
+    formData.append("purchase_date", purchaseDate.toISOString().split("T")[0]);
+  
+    if (imageFile) {
+      formData.append("image", imageFile, imageFile.name);
     }
-    
+  
+    console.log("🚀 Updating equipment with payload:", Object.fromEntries(formData.entries()));
+  
+    try {
+      const response = await fetch("http://localhost/bch_final_project/api/equipment/update.php", {
+        method: "POST",
+        body: formData,
+      });
+  
+      const textResponse = await response.text(); // ✅ Log raw response
+      console.log("📡 Raw API Response:", textResponse);
+  
+      try {
+        const data = JSON.parse(textResponse); // ✅ Parse JSON safely
+        console.log("✅ API Response:", data);
+  
+        if (data.image_path) {
+          setImage(`${BASE_URL}${data.image_path}`);
+        }
+  
+        Alert.alert("Success", "Equipment updated successfully.");
+        navigation.goBack();
+      } catch (jsonError) {
+        console.error("❌ JSON Parse Error:", jsonError);
+        console.error("🔴 Raw Response:", textResponse);
+        Alert.alert("Error", "Unexpected server response.");
+      }
+    } catch (err) {
+      console.error("❌ API Error:", err);
+      Alert.alert("Error", "Failed to update equipment.");
+    }
   };
-
+  
   return (
     <View style={styles.container}>
+      <ScrollView>
       <Text style={styles.title}>Update Equipment</Text>
 
+      {/* ✅ Display Existing Image with Preview */}
+      <View style={styles.imageContainer}>
+        <Image source={{ uri: image }} style={styles.image} />
+      </View>
+
+      {/* ✅ Image Upload Input (For Web) */}
+      <View style={styles.imageUploadContainer}>
+        <input type="file" accept="image/*" onChange={handleImageChange} />
+      </View>
+
       <Text style={styles.text}>Equipment Name</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Equipment Name"
-        value={equipmentName}
-        onChangeText={setEquipmentName}
-      />
+      <TextInput style={styles.input} placeholder="Equipment Name" value={equipmentName} onChangeText={setEquipmentName} />
 
       <Text style={styles.text}>Description</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Description"
-        value={equipmentDescription}
-        onChangeText={setEquipmentDescription}
-      />
+      <TextInput style={styles.input} placeholder="Description" value={equipmentDescription} onChangeText={setEquipmentDescription} />
 
       <Text style={styles.text}>Status</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Status"
-        value={equipmentStatus}
-        onChangeText={setEquipmentStatus}
-      />
+      <TextInput style={styles.input} placeholder="Status" value={equipmentStatus} onChangeText={setEquipmentStatus} />
 
       <Text style={styles.text}>Location</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Location"
-        value={equipmentLocation}
-        onChangeText={setEquipmentLocation}
-      />
-
-      <Text style={styles.text}>Purchase Date</Text>
-      {Platform.OS === 'web' ? (
-        <DatePicker
-          selected={purchaseDate}
-          onChange={(date) => setPurchaseDate(date)}
-          dateFormat="yyyy-MM-dd"
-          className="web-datepicker"
-        />
-      ) : (
-        <>
-          <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePicker}>
-            <Text style={styles.dateText}>{purchaseDate.toISOString().split('T')[0]}</Text>
-          </TouchableOpacity>
-          {showDatePicker && (
-            <DateTimePicker
-              value={purchaseDate}
-              mode="date"
-              display="default"
-              onChange={(event, selectedDate) => {
-                setShowDatePicker(false);
-                if (selectedDate) setPurchaseDate(selectedDate);
-              }}
-            />
-          )}
-        </>
-      )}
+      <TextInput style={styles.input} placeholder="Location" value={equipmentLocation} onChangeText={setEquipmentLocation} />
 
       <Text style={styles.text}>Assigned To (Employee ID)</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Assigned To (Employee ID)"
-        value={assignedTo}
-        onChangeText={setAssignedTo}
-        keyboardType="numeric"
-      />
+      <TextInput style={styles.input} placeholder="Assigned To" value={assignedTo} onChangeText={setAssignedTo} keyboardType="numeric" />
 
       <Button title="Update Equipment" onPress={handleUpdate} disabled={!authorized} />
+      </ScrollView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
+  container: { height: 620, padding: 20 },
   title: { fontSize: 24, marginTop: 20, textAlign: 'center' },
   text: { fontSize: 16, marginBottom: 10 },
-  input: {
-    borderWidth: 1,
-    marginBottom: 15,
-    padding: 10,
-    borderRadius: 5,
-    borderColor: '#ccc',
-  },
-  datePicker: {
-    borderWidth: 1,
-    padding: 10,
-    borderRadius: 5,
-    borderColor: '#ccc',
-    marginBottom: 15,
-    alignItems: 'center',
-  },
-  dateText: {
-    fontSize: 16,
-    color: '#333',
-  },
+  input: { borderWidth: 1, marginBottom: 15, padding: 10, borderRadius: 5, borderColor: '#ccc' },
+  imageContainer: { justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  image: { width: 250, height: 250, borderRadius: 10 },
+  imageUploadContainer: { marginVertical: 15, alignItems: 'center' },
 });
 
 export default UpdateEquipmentScreen;

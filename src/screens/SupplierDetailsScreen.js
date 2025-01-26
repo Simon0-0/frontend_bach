@@ -1,10 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Button, StyleSheet, Alert, Image } from 'react-native';
 import { archiveSupplier } from '../api/api'; // Import the archive API function
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { setAuthToken } from '../api/api';
+
 
 const SupplierDetailsScreen = ({ route, navigation }) => {
   const { supplier } = route.params; // Extract supplier details from route parameters
+  const [userInfo, setUserInfo] = useState(null);
 
+  // ✅ Load user info from AsyncStorage
+  useEffect(() => {
+    const getUserInfo = async () => {
+      try {
+        const token = await AsyncStorage.getItem('authToken');
+        if (!token) {
+          navigation.navigate('Login');
+          return;
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1])); // ✅ Decode JWT token
+        setUserInfo(payload.data);
+      } catch (err) {
+        console.error("Error fetching user info:", err);
+      }
+    };
+
+    getUserInfo();
+  }, []);
   const navigateToUpdate = () => {
     navigation.navigate('UpdateSupplier', { supplier }); // Pass supplier details to the update screen
   };
@@ -40,8 +63,16 @@ const SupplierDetailsScreen = ({ route, navigation }) => {
       <Text style={styles.detail}>Updated At: {supplier.updated_at}</Text>
 
       <View style={styles.buttonContainer}>
-        <Button title="Edit Supplier" onPress={navigateToUpdate} />
-        <Button title="Archive Supplier" onPress={handleArchive} color="red" />
+
+         {(userInfo &&
+                        (userInfo.role_id === 1 || userInfo.role_id === 2 || userInfo.employee_id === supplier.assigned_to )) && (
+                          <Button title="Edit Supplier" onPress={navigateToUpdate} />
+                           )}
+        {(userInfo &&
+                        (userInfo.role_id === 1 || userInfo.role_id === 2 )) && (
+                          <Button title="Archive Supplier" onPress={handleArchive} color="red" />
+                           )}
+       
         <Button title="Go Back" onPress={() => navigation.goBack()} />
       </View>
     </View>

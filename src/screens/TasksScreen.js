@@ -2,12 +2,34 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, Button, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { fetchTasks } from '../api/api';
 import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // ✅ Import AsyncStorage
+import { setAuthToken } from '../api/api';
 
 const TasksScreen = ({ navigation }) => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [userInfo, setUserInfo] = useState(null);
 
+  // ✅ Load user info from AsyncStorage
+  useEffect(() => {
+    const getUserInfo = async () => {
+      try {
+        const token = await AsyncStorage.getItem('authToken');
+        if (!token) {
+          navigation.navigate('Login');
+          return;
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1])); // ✅ Decode JWT token
+        setUserInfo(payload.data);
+      } catch (err) {
+        console.error("Error fetching user info:", err);
+      }
+    };
+
+    getUserInfo();
+  }, []);
   const loadTasks = async () => {
     setLoading(true);
     try {
@@ -19,6 +41,10 @@ const TasksScreen = ({ navigation }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+      loadTasks();
+    }, []);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -68,7 +94,11 @@ const TasksScreen = ({ navigation }) => {
           </TouchableOpacity>
         )}
       />
-      <Button title="Add New Task" onPress={navigateToCreate} />
+       {(userInfo &&
+                (userInfo.role_id === 1 || userInfo.role_id === 2 )) && (
+      
+                  <Button title="Add New Task" onPress={navigateToCreate} /> )}
+     
     </View>
   );
 };

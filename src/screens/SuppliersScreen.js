@@ -9,12 +9,39 @@ import {
   TouchableOpacity,
   Image
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { setAuthToken } from '../api/api';
+
 import { fetchSuppliers } from '../api/api'; // API function to fetch suppliers
 
 const SuppliersScreen = ({ navigation }) => {
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [userInfo, setUserInfo] = useState(null);
+
+  // ✅ Load user info from AsyncStorage
+  useEffect(() => {
+    const getUserInfo = async () => {
+      try {
+        const token = await AsyncStorage.getItem('authToken');
+        if (!token) {
+          navigation.navigate('Login');
+          return;
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1])); // ✅ Decode JWT token
+        setUserInfo(payload.data);
+      } catch (err) {
+        console.error("Error fetching user info:", err);
+      }
+    };
+
+    getUserInfo();
+  }, []);
 
   const loadSuppliers = async () => {
     setLoading(true);
@@ -31,6 +58,12 @@ const SuppliersScreen = ({ navigation }) => {
   useEffect(() => {
     loadSuppliers();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadSuppliers();
+    }, [])
+  );
 
   const navigateToCreate = () => {
     navigation.navigate('CreateSupplier'); // Navigate to the supplier creation screen
@@ -77,7 +110,11 @@ const SuppliersScreen = ({ navigation }) => {
           </TouchableOpacity>
         )}
       />
-      <Button title="Add New Supplier" onPress={navigateToCreate} />
+      {(userInfo &&
+        (userInfo.role_id === 1 || userInfo.role_id === 2 )) && (
+          <Button title="Add New Supplier" onPress={navigateToCreate} />
+        )}
+
     </View>
   );
 };

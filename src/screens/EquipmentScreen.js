@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import { fetchEquipment } from '../api/api'; // API call for fetching equipment
 import { useFocusEffect } from '@react-navigation/native'; // Refresh on focus
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { setAuthToken } from '../api/api';
 // ✅ Set Correct BASE_URL (Ensure it's accessible)
 const BASE_URL = "http://localhost/bch_final_project/";
 
@@ -19,7 +20,27 @@ const EquipmentScreen = ({ navigation }) => {
   const [equipment, setEquipment] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [userInfo, setUserInfo] = useState(null);
 
+  // ✅ Load user info from AsyncStorage
+  useEffect(() => {
+    const getUserInfo = async () => {
+      try {
+        const token = await AsyncStorage.getItem('authToken');
+        if (!token) {
+          navigation.navigate('Login');
+          return;
+        }
+
+        const payload = JSON.parse(atob(token.split('.')[1])); // ✅ Decode JWT token
+        setUserInfo(payload.data);
+      } catch (err) {
+        console.error("Error fetching user info:", err);
+      }
+    };
+
+    getUserInfo();
+  }, []);
   const loadEquipment = async () => {
     setLoading(true);
     try {
@@ -112,7 +133,13 @@ const EquipmentScreen = ({ navigation }) => {
         />
       )}
 
-      <Button title="Add New Equipment" onPress={navigateToCreate} />
+      
+      {(userInfo &&
+                (userInfo.role_id === 1 || userInfo.role_id === 2 || userInfo.employee_id === equipment.assigned_to)) && (
+                  <Button title="Add New Equipment" onPress={navigateToCreate} />
+                   )}
+
+      
     </View>
   );
 };

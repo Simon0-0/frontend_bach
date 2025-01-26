@@ -1,114 +1,76 @@
 import React, { useState } from 'react';
-import { Platform, View, Text, TextInput, Button, StyleSheet, TouchableOpacity } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker'; // Mobile only
-import DatePicker from 'react-datepicker'; // Web only
-import 'react-datepicker/dist/react-datepicker.css'; // Web only
+import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { updateTask } from '../api/api';
 
 const UpdateTaskScreen = ({ route, navigation }) => {
-  const { task } = route.params;
+  const { task, onTaskUpdated } = route.params; // ✅ Use route.params to receive function
 
-  const [title, setTitle] = useState(task.title);
-  const [description, setDescription] = useState(task.description);
-  const [status, setStatus] = useState(task.status);
-  const [priority, setPriority] = useState(task.priority);
+  // ✅ Ensure all states are initialized
+  const [taskTitle, setTaskTitle] = useState(task.title);
+  const [taskDescription, setTaskDescription] = useState(task.description);
+  const [taskStatus, setTaskStatus] = useState(task.status);
+  const [taskPriority, setTaskPriority] = useState(task.priority);
   const [assignedTo, setAssignedTo] = useState(task.assigned_to || '');
-  const [dueDate, setDueDate] = useState(task.due_date ? new Date(task.due_date) : new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [dueDate, setDueDate] = useState(task.due_date || '');
 
   const handleUpdate = async () => {
+    const updatedTask = {
+      task_id: task.task_id,
+      title: taskTitle,
+      description: taskDescription,
+      status: taskStatus,
+      priority: taskPriority,
+      assigned_to: assignedTo ? Number(assignedTo) : null,
+      due_date: dueDate,
+    };
+
+    console.log("🚀 Sending Updated Task:", updatedTask);
+
     try {
-      const payload = {
-        task_id: task.task_id,
-        title,
-        description,
-        status,
-        priority,
-        assigned_to: assignedTo ? parseInt(assignedTo, 10) : null,
-        due_date: dueDate.toISOString().split('T')[0], // Format date as YYYY-MM-DD
-      };
+      const response = await updateTask(updatedTask);
+      console.log("✅ API Response:", response);
 
-      console.log('Updating task with payload:', payload);
+      if (response.message === "Task updated successfully.") {
+        Alert.alert("Success", "Task updated successfully.");
 
-      await updateTask(payload);
-      alert('Task updated successfully.');
-      navigation.goBack();
-    } catch (err) {
-      console.error('Update Error:', err.response?.data || err.message);
-      alert('Failed to update task.');
+        // ✅ Pass updated task back to TaskDetailsScreen
+        if (onTaskUpdated) {
+          onTaskUpdated(updatedTask);
+        }
+
+        navigation.goBack();
+      } else {
+        throw new Error(response.message || "Update failed.");
+      }
+    } catch (error) {
+      console.error("❌ API Error:", error);
+      Alert.alert("Error", "Failed to update task.");
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Update Task</Text>
-      <Text style={styles.text}>Title</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Title*"
-        value={title}
-        onChangeText={setTitle}
-      />
-      <Text style={styles.text}>Description</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Description*"
-        value={description}
-        onChangeText={setDescription}
-      />
-      <Text style={styles.text}>Status</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Status* (e.g., Pending, In Progress, Completed)"
-        value={status}
-        onChangeText={setStatus}
-      />
-      <Text style={styles.text}>Priority</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Priority (e.g., High, Medium, Low)"
-        value={priority}
-        onChangeText={setPriority}
-      />
-      <Text style={styles.text}>Assigned To</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Assigned To (Employee ID)"
-        value={assignedTo}
-        onChangeText={setAssignedTo}
-        keyboardType="numeric"
-      />
-      <Text style={styles.text}>Due Date</Text>
+      <Text style={styles.title}>Edit Task</Text>
 
-      {/* Platform-Specific Date Picker */}
-      {Platform.OS === 'web' ? (
-        <DatePicker
-          selected={dueDate}
-          onChange={(date) => setDueDate(date)}
-          dateFormat="yyyy-MM-dd"
-          className="web-datepicker"
-        />
-      ) : (
-        <>
-          <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePicker}>
-            <Text style={styles.dateText}>{dueDate.toISOString().split('T')[0]}</Text>
-          </TouchableOpacity>
+      <Text style={styles.label}>Title</Text>
+      <TextInput style={styles.input} value={taskTitle} onChangeText={setTaskTitle} />
 
-          {showDatePicker && (
-            <DateTimePicker
-              value={dueDate}
-              mode="date"
-              display="default"
-              onChange={(event, selectedDate) => {
-                setShowDatePicker(false);
-                if (selectedDate) setDueDate(selectedDate);
-              }}
-            />
-          )}
-        </>
-      )}
+      <Text style={styles.label}>Description</Text>
+      <TextInput style={styles.input} value={taskDescription} onChangeText={setTaskDescription} />
 
-      <Button title="Update Task" onPress={handleUpdate} />
+      <Text style={styles.label}>Status</Text>
+      <TextInput style={styles.input} value={taskStatus} onChangeText={setTaskStatus} />
+
+      <Text style={styles.label}>Priority</Text>
+      <TextInput style={styles.input} value={taskPriority} onChangeText={setTaskPriority} />
+
+      <Text style={styles.label}>Assigned To (Employee ID)</Text>
+      <TextInput style={styles.input} value={assignedTo} onChangeText={setAssignedTo} keyboardType="numeric" />
+
+      <Text style={styles.label}>Due Date</Text>
+      <TextInput style={styles.input} value={dueDate} onChangeText={setDueDate} />
+
+      <Button title="Save Changes" onPress={handleUpdate} />
     </View>
   );
 };
@@ -116,25 +78,13 @@ const UpdateTaskScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
   title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
-  text: { fontSize: 18, marginBottom: 10 },
+  label: { fontSize: 16, marginBottom: 5 },
   input: {
     borderWidth: 1,
     marginBottom: 15,
     padding: 10,
     borderRadius: 5,
     borderColor: '#ccc',
-  },
-  datePicker: {
-    borderWidth: 1,
-    padding: 10,
-    borderRadius: 5,
-    borderColor: '#ccc',
-    marginBottom: 15,
-    alignItems: 'center',
-  },
-  dateText: {
-    fontSize: 16,
-    color: '#333',
   },
 });
 

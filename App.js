@@ -25,7 +25,7 @@ import EmployeeDetailsScreen from './src/screens/EmployeeDetailsScreen';
 import UpdateEmployeeScreen from './src/screens/UpdateEmployeeScreen';
 import Employees from './src/screens/EmployeesScreen';
 import ChangePasswordScreen from './src/screens/ChangePasswordScreen';
-
+import ArchiveScreen from './src/screens/ArchiveScreen';
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -65,6 +65,7 @@ export default function App() {
         <Stack.Screen name="UpdateEmployee" component={UpdateEmployeeScreen} />
         <Stack.Screen name="Employees" component={Employees} />
         <Stack.Screen name='ChangePassword' component={ChangePasswordScreen}/>
+        <Stack.Screen name='Archive' component={ArchiveScreen}/>
       </Stack.Navigator>
     </NavigationContainer>
   );

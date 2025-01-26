@@ -36,6 +36,9 @@ const DashboardScreen = ({ navigation }) => {
           <TouchableOpacity onPress={() => navigateTo('Employees')} style={styles.menuItem}>
             <Text style={styles.menuText}>Employees</Text>
           </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigateTo('Archive')} style={styles.menuItem}>
+            <Text style={styles.menuText}>Archive</Text>
+          </TouchableOpacity>
         </View>
       )}
 
