@@ -5,29 +5,21 @@ import { createDocument } from "../api/api"; // Ensure the API function is corre
 const CreateDocumentScreen = ({ navigation }) => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [status, setStatus] = useState(""); // Add status field
+  const [fileLink, setFileLink] = useState(""); // ✅ Store file link
 
-  // Handle form submission
   const handleCreate = async () => {
-    // Validate required fields
     if (!title.trim() || !content.trim()) {
       Alert.alert("Error", "Title and content are required.");
       return;
     }
 
-    // Ensure status is included in the payload
-    const payload = { title, content, status };
-
-    console.log("🚀 Sending request with payload:", JSON.stringify(payload, null, 2));
+    const payload = { title, content, file_link: fileLink }; // ✅ Include file link
 
     try {
       const response = await createDocument(payload);
-      console.log("API Response:", response);
-
       Alert.alert("Success", "Document created successfully.");
-      navigation.goBack(); // Navigate back after creation
+      navigation.goBack();
     } catch (error) {
-      console.error("API Error:", error.response?.data || error.message);
       Alert.alert("Error", `Failed to create document. ${error.response?.data?.error || error.message}`);
     }
   };
@@ -35,19 +27,16 @@ const CreateDocumentScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Create New Document</Text>
-      <TextInput
-        style={styles.input}
-        value={title}
-        onChangeText={setTitle}
-        placeholder="Title"
-      />
-      <TextInput
-        style={styles.input}
-        value={content}
-        onChangeText={setContent}
-        placeholder="Content"
-        multiline
-      />
+
+      <Text style={styles.label}>Title</Text>
+      <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="Enter Title" />
+
+      <Text style={styles.label}>Content</Text>
+      <TextInput style={styles.input} value={content} onChangeText={setContent} placeholder="Enter Content" multiline />
+
+      <Text style={styles.label}>Document Link (HTTP URL)</Text>
+      <TextInput style={styles.input} value={fileLink} onChangeText={setFileLink} placeholder="Enter a link" />
+
       <Button title="Create Document" onPress={handleCreate} />
     </View>
   );
@@ -56,7 +45,8 @@ const CreateDocumentScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
   title: { fontSize: 24, marginBottom: 20, textAlign: "center" },
-  input: { borderWidth: 1, marginBottom: 15, padding: 10, borderRadius: 5 },
+  label: { fontSize: 16, marginBottom: 5, fontWeight: "bold" },
+  input: { borderWidth: 1, marginBottom: 15, padding: 10, borderRadius: 5, borderColor: "#ccc" },
 });
 
 export default CreateDocumentScreen;

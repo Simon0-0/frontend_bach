@@ -3,6 +3,8 @@ import { View, Text, FlatList, Button, StyleSheet, ActivityIndicator, TouchableO
 import { fetchDocuments } from '../api/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setAuthToken } from '../api/api';
+import { useFocusEffect } from '@react-navigation/native';
+
 
 
 const DocumentScreen = ({ navigation }) => {
@@ -45,6 +47,12 @@ const DocumentScreen = ({ navigation }) => {
   useEffect(() => {
     loadDocuments();
   }, []);
+
+    useFocusEffect(
+      React.useCallback(() => {
+        loadDocuments();
+      }, [])
+    );
 
   const navigateToDetails = (item) => {
     navigation.navigate('DocumentDetails', { document: item });

@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Linking, Alert } from 'react-native';
-import { archiveDocument } from '../api/api';
+import { View, Text, Button, StyleSheet, Linking, Alert } from 'react-native';
+import { archiveDocument, fetchEmployeeById } from '../api/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { setAuthToken } from '../api/api';
 
 const DocumentDetailScreen = ({ route, navigation }) => {
   const { document } = route.params;
   const [userInfo, setUserInfo] = useState(null);
+  const [createdByName, setCreatedByName] = useState('Unknown');
 
-  // ✅ Load user info from AsyncStorage
   useEffect(() => {
     const getUserInfo = async () => {
       try {
@@ -17,41 +16,63 @@ const DocumentDetailScreen = ({ route, navigation }) => {
           navigation.navigate('Login');
           return;
         }
-
-        const payload = JSON.parse(atob(token.split('.')[1])); // ✅ Decode JWT token
+        const payload = JSON.parse(atob(token.split('.')[1]));
         setUserInfo(payload.data);
       } catch (err) {
         console.error("Error fetching user info:", err);
       }
     };
 
+    const fetchCreatorName = async () => {
+      if (document.created_by) {
+        try {
+          const employee = await fetchEmployeeById(document.created_by);
+          if (employee && employee.name) {
+            setCreatedByName(employee.name);
+          }
+        } catch (err) {
+          console.error("Error fetching employee name:", err);
+        }
+      }
+    };
+
     getUserInfo();
-  }, []);
+    fetchCreatorName();
+  }, [document.created_by]);
 
   const navigateToUpdate = () => {
     navigation.navigate('UpdateDocument', { document });
   };
 
   const handleArchive = async () => {
+    console.log("📌 Archiving Document ID:", document.document_id); // ✅ Debug
+  
+    if (!document.document_id) {
+      Alert.alert("Error", "Document ID is missing.");
+      return;
+    }
+  
     try {
-      await archiveDocument(document.document_id);
+      const response = await archiveDocument(document.document_id);
+      console.log("✅ Archive Response:", response); // ✅ Debug server response
+  
       Alert.alert("Success", "Document archived successfully.");
       navigation.goBack();
     } catch (error) {
+      console.error("❌ Archive Error:", error.message || error);
       Alert.alert("Error", "Failed to archive document.");
-      console.error(error.message || error);
     }
   };
-
+  
+  
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{document.title}</Text>
       <Text style={styles.detail}>Content: {document.content}</Text>
-      <Text style={styles.detail}>Created By: {document.created_by}</Text>
+      <Text style={styles.detail}>Created By: {createdByName}</Text>
       <Text style={styles.detail}>Created At: {document.created_at}</Text>
       <Text style={styles.detail}>Updated At: {document.updated_at}</Text>
 
-      {/* ✅ Show Document Link */}
       {document.file_link ? (
         <Text style={styles.link} onPress={() => Linking.openURL(document.file_link)}>
           Open Document
@@ -61,16 +82,12 @@ const DocumentDetailScreen = ({ route, navigation }) => {
       )}
 
       <View style={styles.buttonContainer}>
-
-         {(userInfo &&
-                              (userInfo.role_id === 1 || userInfo.role_id === 2 )) && (
-                                <Button title="Edit Document" onPress={navigateToUpdate} />
-                                 )}
-        {(userInfo &&
-                              (userInfo.role_id === 1 || userInfo.role_id === 2 )) && (
-                                <Button title="Archive Document" onPress={handleArchive} color="red" />
-                                 )}
-        
+        {(userInfo && (userInfo.role_id === 1 || userInfo.role_id === 2)) && (
+          <Button title="Edit Document" onPress={navigateToUpdate} />
+        )}
+        {(userInfo && (userInfo.role_id === 1 || userInfo.role_id === 2)) && (
+          <Button title="Archive Document" onPress={handleArchive} color="red" />
+        )}
         <Button title="Go Back" onPress={() => navigation.goBack()} />
       </View>
     </View>

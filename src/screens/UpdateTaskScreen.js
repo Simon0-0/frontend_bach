@@ -1,17 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import { updateTask } from '../api/api';
+import { Picker } from '@react-native-picker/picker';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { updateTask, fetchEmployees } from '../api/api';
 
 const UpdateTaskScreen = ({ route, navigation }) => {
-  const { task, onTaskUpdated } = route.params; // ✅ Use route.params to receive function
+  const { task, onTaskUpdated } = route.params;
 
-  // ✅ Ensure all states are initialized
   const [taskTitle, setTaskTitle] = useState(task.title);
   const [taskDescription, setTaskDescription] = useState(task.description);
-  const [taskStatus, setTaskStatus] = useState(task.status);
-  const [taskPriority, setTaskPriority] = useState(task.priority);
+  const [taskStatus, setTaskStatus] = useState(task.status || 'To Do');
+  const [taskPriority, setTaskPriority] = useState(task.priority || 'Medium');
   const [assignedTo, setAssignedTo] = useState(task.assigned_to || '');
-  const [dueDate, setDueDate] = useState(task.due_date || '');
+  const [dueDate, setDueDate] = useState(task.due_date ? new Date(task.due_date) : new Date());
+  const [employees, setEmployees] = useState([]);
+
+  useEffect(() => {
+    const loadEmployees = async () => {
+      try {
+        const data = await fetchEmployees();
+        setEmployees(data);
+      } catch (err) {
+        console.error("Failed to load employees:", err);
+      }
+    };
+    loadEmployees();
+  }, []);
 
   const handleUpdate = async () => {
     const updatedTask = {
@@ -21,29 +36,21 @@ const UpdateTaskScreen = ({ route, navigation }) => {
       status: taskStatus,
       priority: taskPriority,
       assigned_to: assignedTo ? Number(assignedTo) : null,
-      due_date: dueDate,
+      due_date: dueDate.toISOString().split("T")[0],
     };
-
-    console.log("🚀 Sending Updated Task:", updatedTask);
 
     try {
       const response = await updateTask(updatedTask);
-      console.log("✅ API Response:", response);
-
       if (response.message === "Task updated successfully.") {
         Alert.alert("Success", "Task updated successfully.");
-
-        // ✅ Pass updated task back to TaskDetailsScreen
         if (onTaskUpdated) {
           onTaskUpdated(updatedTask);
         }
-
         navigation.goBack();
       } else {
         throw new Error(response.message || "Update failed.");
       }
     } catch (error) {
-      console.error("❌ API Error:", error);
       Alert.alert("Error", "Failed to update task.");
     }
   };
@@ -59,16 +66,34 @@ const UpdateTaskScreen = ({ route, navigation }) => {
       <TextInput style={styles.input} value={taskDescription} onChangeText={setTaskDescription} />
 
       <Text style={styles.label}>Status</Text>
-      <TextInput style={styles.input} value={taskStatus} onChangeText={setTaskStatus} />
+      <Picker selectedValue={taskStatus} onValueChange={setTaskStatus} style={styles.picker}>
+        <Picker.Item label="To Do" value="To Do" />
+        <Picker.Item label="In Progress" value="In Progress" />
+        <Picker.Item label="Completed" value="Completed" />
+      </Picker>
 
       <Text style={styles.label}>Priority</Text>
-      <TextInput style={styles.input} value={taskPriority} onChangeText={setTaskPriority} />
+      <Picker selectedValue={taskPriority} onValueChange={setTaskPriority} style={styles.picker}>
+        <Picker.Item label="Low" value="Low" />
+        <Picker.Item label="Medium" value="Medium" />
+        <Picker.Item label="High" value="High" />
+      </Picker>
 
-      <Text style={styles.label}>Assigned To (Employee ID)</Text>
-      <TextInput style={styles.input} value={assignedTo} onChangeText={setAssignedTo} keyboardType="numeric" />
+      <Text style={styles.label}>Assigned To</Text>
+      <Picker selectedValue={assignedTo} onValueChange={setAssignedTo} style={styles.picker}>
+        <Picker.Item label="Unassigned" value="" />
+        {employees.map((emp) => (
+          <Picker.Item key={emp.employee_id} label={emp.name} value={String(emp.employee_id)} />
+        ))}
+      </Picker>
 
       <Text style={styles.label}>Due Date</Text>
-      <TextInput style={styles.input} value={dueDate} onChangeText={setDueDate} />
+      <DatePicker
+        selected={dueDate}
+        onChange={setDueDate}
+        dateFormat="yyyy-MM-dd"
+        className="web-datepicker"
+      />
 
       <Button title="Save Changes" onPress={handleUpdate} />
     </View>
@@ -86,6 +111,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     borderColor: '#ccc',
   },
+  picker: { borderWidth: 1, marginBottom: 15, borderColor: '#ccc', backgroundColor: '#fff' },
 });
 
 export default UpdateTaskScreen;

@@ -9,8 +9,9 @@ import {
   Alert,
   ScrollView
 } from 'react-native';
-import DatePicker from 'react-datepicker'; // Web only
-import 'react-datepicker/dist/react-datepicker.css'; // Web only
+import { Picker } from '@react-native-picker/picker';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { createEquipment, fetchEmployees } from '../api/api';
 
 const CreateEquipmentScreen = ({ navigation }) => {
@@ -19,38 +20,33 @@ const CreateEquipmentScreen = ({ navigation }) => {
   const [status, setStatus] = useState('Available');
   const [location, setLocation] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
-  const [supplierId, setSupplierId] = useState('');
   const [warrantyExpiration, setWarrantyExpiration] = useState(null);
   const [purchaseDate, setPurchaseDate] = useState(new Date());
   const [employees, setEmployees] = useState([]);
-  const [image, setImage] = useState(null); // Image preview
-  const [imageFile, setImageFile] = useState(null); // Actual image file
+  const [image, setImage] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
 
   useEffect(() => {
-    const loadEmployees = async () => {
+    const loadData = async () => {
       try {
-        const data = await fetchEmployees();
-        setEmployees(data);
+        const employeeData = await fetchEmployees();
+        setEmployees(employeeData);
       } catch (err) {
-        console.error("Failed to load employees:", err);
+        console.error("Failed to load data:", err);
       }
     };
-    loadEmployees();
+    loadData();
   }, []);
 
-  // ✅ Handle Image Selection for Web
   const handleImageChange = (event) => {
-    const file = event.target.files[0]; // Get selected file
-
+    const file = event.target.files[0];
     if (file) {
-      const fileURL = URL.createObjectURL(file); // Create temporary URL for preview
+      const fileURL = URL.createObjectURL(file);
       setImage(fileURL);
       setImageFile(file);
-      console.log("📸 Selected Image:", file);
     }
   };
 
-  // ✅ Function to Handle Equipment Creation
   const handleCreate = async () => {
     const formData = new FormData();
     formData.append("name", name);
@@ -58,29 +54,22 @@ const CreateEquipmentScreen = ({ navigation }) => {
     formData.append("status", status);
     formData.append("location", location);
     formData.append("assigned_to", assignedTo || null);
-    formData.append("supplier_id", supplierId || null);
-
+    
     if (warrantyExpiration) {
       formData.append("warranty_expiration", warrantyExpiration.toISOString().split("T")[0]);
     }
     if (purchaseDate) {
       formData.append("purchase_date", purchaseDate.toISOString().split("T")[0]);
     }
-
-    // ✅ Append the image only if selected
     if (imageFile) {
       formData.append("image", imageFile);
     }
 
-    console.log("🚀 Creating equipment with payload:", formData);
-
     try {
-      const response = await createEquipment(formData);
-      console.log("✅ API Response:", response.data);
+      await createEquipment(formData);
       Alert.alert("Success", "Equipment created successfully.");
       navigation.goBack();
     } catch (err) {
-      console.error("❌ Error creating equipment:", err.response?.data || err.message);
       Alert.alert("Error", "Failed to create equipment.");
     }
   };
@@ -90,64 +79,39 @@ const CreateEquipmentScreen = ({ navigation }) => {
       <ScrollView>
         <Text style={styles.title}>Create New Equipment</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Equipment Name"
-          value={name}
-          onChangeText={setName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Description"
-          value={description}
-          onChangeText={setDescription}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Status (e.g., Available)"
-          value={status}
-          onChangeText={setStatus}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Location"
-          value={location}
-          onChangeText={setLocation}
-        />
+        <Text style={styles.label}>Equipment Name</Text>
+        <TextInput style={styles.input} placeholder="Enter Equipment Name" value={name} onChangeText={setName} />
 
-        {/* ✅ Image Upload Input (For Web) */}
+        <Text style={styles.label}>Description</Text>
+        <TextInput style={styles.input} placeholder="Enter Description" value={description} onChangeText={setDescription} />
+
+        <Text style={styles.label}>Status</Text>
+        <Picker selectedValue={status} onValueChange={setStatus} style={styles.picker}>
+          <Picker.Item label="Available" value="Available" />
+          <Picker.Item label="In Use" value="In Use" />
+          <Picker.Item label="In Repair" value="In Repair" />
+        </Picker>
+
+        <Text style={styles.label}>Location</Text>
+        <TextInput style={styles.input} placeholder="Enter Location" value={location} onChangeText={setLocation} />
+
+        <Text style={styles.label}>Assigned To</Text>
+        <Picker selectedValue={assignedTo} onValueChange={setAssignedTo} style={styles.picker}>
+          <Picker.Item label="Unassigned" value="" />
+          {employees.map((emp) => (
+            <Picker.Item key={emp.employee_id} label={emp.name} value={String(emp.employee_id)} />
+          ))}
+        </Picker>
+
+        <Text style={styles.label}>Warranty Expiration</Text>
+        <DatePicker selected={warrantyExpiration} onChange={setWarrantyExpiration} dateFormat="yyyy-MM-dd" className="web-datepicker" />
+
+        <Text style={styles.label}>Upload Equipment Image</Text>
         <View style={styles.imageUploadContainer}>
           <input type="file" accept="image/*" onChange={handleImageChange} />
         </View>
 
-        {/* ✅ Show Selected Image Preview */}
         {image && <Image source={{ uri: image }} style={styles.image} />}
-
-        {/* ✅ Date Picker for Warranty Expiration */}
-        <DatePicker
-          selected={warrantyExpiration}
-          onChange={(date) => setWarrantyExpiration(date)}
-          dateFormat="yyyy-MM-dd"
-          className="web-datepicker"
-        />
-
-        {/* ✅ Assigned To Input */}
-        <TextInput
-          style={styles.input}
-          placeholder="Assigned To (Employee ID)"
-          value={assignedTo}
-          onChangeText={setAssignedTo}
-          keyboardType="numeric"
-        />
-
-        {/* ✅ Supplier ID Input */}
-        <TextInput
-          style={styles.input}
-          placeholder="Supplier ID"
-          value={supplierId}
-          onChangeText={setSupplierId}
-          keyboardType="numeric"
-        />
 
         <Button title="Create Equipment" onPress={handleCreate} />
       </ScrollView>
@@ -155,10 +119,10 @@ const CreateEquipmentScreen = ({ navigation }) => {
   );
 };
 
-// ✅ Styles
 const styles = StyleSheet.create({
-  container: { height: 620, padding: 20 },
+  container: { flex: 1, padding: 20 },
   title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
+  label: { fontSize: 16, fontWeight: 'bold', marginBottom: 5 },
   input: {
     borderWidth: 1,
     marginBottom: 15,
@@ -166,6 +130,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     borderColor: '#ccc',
   },
+  picker: { borderWidth: 1, marginBottom: 15, borderColor: '#ccc', backgroundColor: '#fff' },
   imageUploadContainer: {
     marginVertical: 15,
   },

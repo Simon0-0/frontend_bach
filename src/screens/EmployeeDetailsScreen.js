@@ -70,8 +70,8 @@ const EmployeeDetailScreen = ({ route, navigation }) => {
         </View>
       )}
 
-      {/* Only show Edit button for Admin (1) and Manager (2) */}
-      {userRole && (userRole === 1 || userRole === 2) && (
+     
+      {userRole && (userRole === 1 ) && (
         <Button title="Edit Employee" onPress={() => navigation.navigate('UpdateEmployee', { employeeId })} />
       )}
 

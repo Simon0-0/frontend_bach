@@ -361,17 +361,28 @@ export const updateTask = async (data) => {
 };
 
 
-// Archive Task
-export const archiveTask = async (id) => {
-  const token = await AsyncStorage.getItem('authToken');
-  if (!token) throw new Error('No token found. Please log in.');
+export const archiveTask = async (task_id) => {
+  console.log("📡 Sending Archive Request to:", `http://localhost/bch_final_project/api/tasks/archive.php`);
 
-  const response = await axios.put(`${API_BASE_URL}/tasks/archive.php?id=${id}`, {}, {
-    headers: { Authorization: `Bearer ${token}` },
+  const response = await fetch(`http://localhost/bch_final_project/api/tasks/archive.php`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${await AsyncStorage.getItem("authToken")}`,
+    },
+    body: JSON.stringify({ task_id }), // ✅ Ensure correct JSON format
   });
 
-  return response.data;
+  const textResponse = await response.text(); // ✅ Read response as text
+  console.log("📡 Raw API Response:", textResponse); // ✅ Debug unexpected HTML response
+
+  try {
+    return JSON.parse(textResponse); // ✅ Convert to JSON
+  } catch (error) {
+    throw new Error(`Unexpected response: ${textResponse}`);
+  }
 };
+
 
 export const fetchDocuments = async () => {
   try {
@@ -387,9 +398,25 @@ export const updateDocument = async (data) => {
   return await api.put(`/documents/update.php`, data);
 };
 
-export const archiveDocument = async (id) => {
-  return await api.put(`/documents/archive.php?id=${id}`);
+export const archiveDocument = async (document_id) => {
+  console.log("📡 API Request URL:", `http://localhost/api/documents/archive.php`); // ✅ Debugging
+
+  const response = await fetch(`http://localhost/api/documents/archive.php`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${await AsyncStorage.getItem("authToken")}`, // ✅ Include token if needed
+    },
+    body: JSON.stringify({ document_id }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Server Error: ${response.status}`);
+  }
+
+  return response.json();
 };
+
 export const createDocument = async (data) => {
   try {
     console.log("📡 Sending API request:", JSON.stringify(data, null, 2));
